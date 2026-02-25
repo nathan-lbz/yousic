@@ -7,8 +7,15 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -23,6 +30,9 @@ import coil.compose.AsyncImage
 import com.example.yousiccode.ui.theme.YousicCodeTheme
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
 
 class MainActivity : ComponentActivity() {
 
@@ -68,7 +78,8 @@ class MainActivity : ComponentActivity() {
 fun Title( modifier: Modifier = Modifier) {
     Text(
         text = "Yousic",
-        modifier = modifier
+        modifier = modifier.fillMaxWidth(),
+        textAlign = TextAlign.Center
     )
 }
 
@@ -83,16 +94,27 @@ fun SearchBar(modifier: Modifier = Modifier, search: MutableState<String>, viewM
 
 @Composable
 fun ArtistCard(artiste : Artist?){
-    Column() {
+    Column(Modifier.fillMaxWidth().padding(10.dp)) {
         artiste?.let { currentArtist ->
             Row() {
-                Text(text = currentArtist.name)
+                Text(text = currentArtist.name,
+                    modifier = Modifier.fillMaxWidth(),
+                    textAlign = TextAlign.Center)
+
             }
         } ?: run {
-            Text("Chargement en cours...")
+            Text("Chargement en cours...", modifier = Modifier.fillMaxWidth(),
+                textAlign = TextAlign.Center)
         }
         Row() {
-            AsyncImage(artiste?.picture, contentDescription = "Artist picture")
+            AsyncImage(
+                artiste?.picture,
+                contentDescription = "Artist picture",
+                modifier = Modifier.fillMaxWidth()
+                    .height(350.dp),
+                contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+                alignment = Alignment.Center
+            )
         }
 
     }
@@ -100,10 +122,11 @@ fun ArtistCard(artiste : Artist?){
 }
 
 @Composable
-fun ArtistsList(artists: List<Artist>?){
+fun ArtistsList(artists : List<Artist>?){
+    val scrollState = rememberScrollState()
     if (artists != null) {
-        Column() {
-            for (artist in artists) {
+        LazyColumn() {
+            items(artists) { artist ->
                 Row() {
                     ArtistCard(artist)
                 }
@@ -127,7 +150,7 @@ fun GreetingPreview() {
                 SearchBar( search = remember { mutableStateOf("Rechercher") }, viewModel = MusicViewModel())
             }
             Row {
-                ArtistCard(artiste = Artist(1, "test", "test"))
+                ArtistCard(artiste = Artist(1, "test", "https://api.deezer.com/artist/27/image"))
             }
         }
     }
