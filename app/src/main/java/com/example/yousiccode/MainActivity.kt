@@ -4,13 +4,13 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.viewModels
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SearchBarState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
@@ -19,39 +19,24 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.lifecycleScope
 import coil.compose.AsyncImage
-import coil.decode.ImageSource
 import com.example.yousiccode.ui.theme.YousicCodeTheme
-import kotlinx.coroutines.launch
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 
 class MainActivity : ComponentActivity() {
 
     private var artiste by mutableStateOf<Artist?>(null)
-
-
+    private var listArtistes by mutableStateOf<List<Artist>?>(null)
+    val viewModel by viewModels<MusicViewModel>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        lifecycleScope.launch {
-            try {
-                val response = RetrofitInstance.api.getArtistById(27)
-
-                artiste = response
-
-            } catch (e: Exception) {
-
-                e.printStackTrace()
-            }
-        }
         enableEdgeToEdge()
         setContent {
-            val search = remember { mutableStateOf("Rechercher ") }
+            listArtistes = viewModel.searchResult
+            var search = remember {  mutableStateOf("")}
             YousicCodeTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     Column() {
@@ -63,11 +48,12 @@ class MainActivity : ComponentActivity() {
                         Row() {
                             SearchBar(
                                 modifier = Modifier.padding(innerPadding),
-                                search
+                                search,
+                                viewModel
                             )
                         }
                         Row() {
-                            ArtistCard(artiste)
+                            ArtistsList(listArtistes)
                         }
                     }
                 }
@@ -75,7 +61,6 @@ class MainActivity : ComponentActivity() {
         }
     }
 }
-
 
 
 
@@ -88,9 +73,9 @@ fun Title( modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun SearchBar(modifier: Modifier = Modifier, search: MutableState<String>) {
+fun SearchBar(modifier: Modifier = Modifier, search: MutableState<String>, viewModel: MusicViewModel) {
     TextField(search.value, onValueChange = { search.value = it })
-    Button( onClick = { /*TODO*/ }) {
+    Button( onClick = { viewModel.chercherArtiste(search.value) }) {
         Text(text = "Search")
     }
 }
@@ -101,7 +86,7 @@ fun ArtistCard(artiste : Artist?){
     Column() {
         artiste?.let { currentArtist ->
             Row() {
-                Text(text = currentArtist?.name ?: "Chargement")
+                Text(text = currentArtist.name)
             }
         } ?: run {
             Text("Chargement en cours...")
@@ -110,6 +95,22 @@ fun ArtistCard(artiste : Artist?){
             AsyncImage(artiste?.picture, contentDescription = "Artist picture")
         }
 
+    }
+
+}
+
+@Composable
+fun ArtistsList(artists: List<Artist>?){
+    if (artists != null) {
+        Column() {
+            for (artist in artists) {
+                Row() {
+                    ArtistCard(artist)
+                }
+            }
+        }
+    }else {
+        Text("Aucun artiste trouvé")
     }
 
 }
@@ -123,7 +124,7 @@ fun GreetingPreview() {
                 Title()
             }
             Row {
-                SearchBar( search = remember { mutableStateOf("Recher") })
+                SearchBar( search = remember { mutableStateOf("Rechercher") }, viewModel = MusicViewModel())
             }
             Row {
                 ArtistCard(artiste = Artist(1, "test", "test"))

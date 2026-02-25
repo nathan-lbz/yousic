@@ -6,3 +6,8 @@ data class Artist (
     val picture: String
 )
 
+data class ListArtists(
+    val data: List<Artist>
+)
+
+
