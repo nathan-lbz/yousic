@@ -12,6 +12,16 @@ interface DeezerApiService {
     suspend fun searchArtist(
         @Query("q") query: String
     ): ListArtists
+
+    @GET("search/track")
+    suspend fun searchSong(
+        @Query("q") query: String
+    ): ListSongs
+
+    @GET("search/album")
+    suspend fun searchAlbum(
+        @Query("q") query: String
+    ): ListAlbums
 }
 
 

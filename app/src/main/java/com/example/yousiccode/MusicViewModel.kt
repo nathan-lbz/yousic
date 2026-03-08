@@ -8,7 +8,10 @@ import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.launch
 
 class MusicViewModel : ViewModel() {
-    var searchResult by mutableStateOf<List<Artist>>(emptyList())
+    var searchArtist by mutableStateOf<List<Artist>?>(null)
+    var searchSong by mutableStateOf<List<Song>?>(null)
+    var searchAlbum by mutableStateOf<List<Album>?>(null)
+
     var isLoading by mutableStateOf(false)
 
 
@@ -16,8 +19,36 @@ class MusicViewModel : ViewModel() {
         viewModelScope.launch {
             isLoading = true
             try {
-                val response = RetrofitInstance.api.searchArtist(nom)
-                searchResult = response.data
+                val artist = RetrofitInstance.apiDeezer.searchArtist(nom)
+                searchArtist = artist.data
+            } catch (e: Exception) {
+                e.printStackTrace()
+            } finally {
+                isLoading = false
+            }
+        }
+    }
+
+    fun chercherSon(nom: String) {
+        viewModelScope.launch {
+            isLoading = true
+            try {
+                val song = RetrofitInstance.apiDeezer.searchSong(nom)
+                searchSong = song.data
+            } catch (e: Exception) {
+                e.printStackTrace()
+            } finally {
+                isLoading = false
+            }
+        }
+    }
+
+    fun chercherAlbum(nom: String) {
+        viewModelScope.launch {
+            isLoading = true
+            try {
+                val song = RetrofitInstance.apiDeezer.searchAlbum(nom)
+                searchAlbum = song.data
             } catch (e: Exception) {
                 e.printStackTrace()
             } finally {

@@ -68,4 +68,6 @@ dependencies {
     // Coil : Pour charger les pochettes d'albums depuis une URL
     implementation("io.coil-kt:coil-compose:2.6.0")
 
+
+
 }

@@ -1,6 +1,7 @@
 package com.example.yousiccode
 
 import android.os.Bundle
+import android.provider.MediaStore
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -35,9 +36,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 
 class MainActivity : ComponentActivity() {
-
-    private var artiste by mutableStateOf<Artist?>(null)
     private var listArtistes by mutableStateOf<List<Artist>?>(null)
+    private var listSon by mutableStateOf<List<Song>?>(null)
+    private var listAlbum by mutableStateOf<List<Album>?>(null)
     val viewModel by viewModels<MusicViewModel>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -45,9 +46,13 @@ class MainActivity : ComponentActivity() {
 
         enableEdgeToEdge()
         setContent {
-            listArtistes = viewModel.searchResult
-            var search = remember {  mutableStateOf("")}
+            listSon = viewModel.searchSong
+            listArtistes = viewModel.searchArtist
+            listAlbum = viewModel.searchAlbum
+
             YousicCodeTheme {
+                var searchType = remember {  mutableStateOf("Artiste")}
+                var search = remember {  mutableStateOf("")}
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     Column() {
                         Row() {
@@ -55,15 +60,29 @@ class MainActivity : ComponentActivity() {
                             modifier = Modifier.padding(innerPadding)
                             )
                         }
+
                         Row() {
                             SearchBar(
-                                modifier = Modifier.padding(innerPadding),
                                 search,
-                                viewModel
+                                viewModel,
                             )
                         }
-                        Row() {
-                            ArtistsList(listArtistes)
+
+
+                        SearchType(searchType)
+                        if (searchType.value == "Artiste") {
+                            Row() {
+                                ListArtists(listArtistes )
+                            }
+                        } else if (searchType.value == "Chanson") {
+                            Row() {
+                                ListSongs(listSon)
+                            }
+                        }else if (searchType.value == "Album") {
+                            Row() {
+                                ListAlbums(listAlbum)
+                            }
+
                         }
                     }
                 }
@@ -84,9 +103,14 @@ fun Title( modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun SearchBar(modifier: Modifier = Modifier, search: MutableState<String>, viewModel: MusicViewModel) {
+fun SearchBar(search: MutableState<String>, viewModel: MusicViewModel) {
     TextField(search.value, onValueChange = { search.value = it })
-    Button( onClick = { viewModel.chercherArtiste(search.value) }) {
+    val chercherTout = {
+        viewModel.chercherArtiste(search.value)
+        viewModel.chercherSon(search.value)
+        viewModel.chercherAlbum(search.value)
+    }
+    Button( onClick =  chercherTout) {
         Text(text = "Search")
     }
 }
@@ -99,7 +123,8 @@ fun ArtistCard(artiste : Artist?){
             Row() {
                 Text(text = currentArtist.name,
                     modifier = Modifier.fillMaxWidth(),
-                    textAlign = TextAlign.Center)
+                    textAlign = TextAlign.Center
+                )
 
             }
         } ?: run {
@@ -122,20 +147,120 @@ fun ArtistCard(artiste : Artist?){
 }
 
 @Composable
-fun ArtistsList(artists : List<Artist>?){
-    val scrollState = rememberScrollState()
-    if (artists != null) {
-        LazyColumn() {
-            items(artists) { artist ->
-                Row() {
-                    ArtistCard(artist)
-                }
+fun SongCard(song : Song?){
+    Column(Modifier.fillMaxWidth().padding(10.dp)) {
+        song?.let { currentSong ->
+            Row() {
+                Text(text = currentSong.title,
+                    modifier = Modifier.fillMaxWidth(),
+                    textAlign = TextAlign.Center)
+
             }
+            Row() {
+                AsyncImage(
+                    currentSong.album.cover_medium,
+                    contentDescription = "Artist picture",
+                    modifier = Modifier.fillMaxWidth()
+                        .height(350.dp),
+                    contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+                    alignment = Alignment.Center
+                )
+            }
+        } ?: run {
+            Text("Chargement en cours...", modifier = Modifier.fillMaxWidth(),
+                textAlign = TextAlign.Center)
         }
-    }else {
+
+
+    }
+}
+
+@Composable
+fun AlbumCard(album : Album?){
+    Column(Modifier.fillMaxWidth().padding(10.dp)) {
+        album?.let { currentAlbum ->
+            Row() {
+                Text(text = currentAlbum.title,
+                    modifier = Modifier.fillMaxWidth(),
+                    textAlign = TextAlign.Center)
+
+            }
+            Row() {
+                AsyncImage(
+                    currentAlbum.cover_medium,
+                    contentDescription = "Album picture",
+                    modifier = Modifier.fillMaxWidth()
+                        .height(350.dp),
+                    contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+                    alignment = Alignment.Center
+                )
+            }
+        } ?: run {
+            Text("Chargement en cours...", modifier = Modifier.fillMaxWidth(),
+                textAlign = TextAlign.Center)
+        }
+
+
+    }
+}
+
+@Composable
+fun ListArtists(artists : List<Artist>?) {
+    if (artists == null)return
+    if (!artists.isEmpty()) {
+        CardsList(artists as List<Object>, composable = { ArtistCard( it as Artist) })
+    } else {
         Text("Aucun artiste trouvé")
     }
+}
+@Composable
+fun ListSongs(songs : List<Song>?){
+    if (songs == null) return
+    if (!songs.isEmpty()) {
+        CardsList(songs as List<Object>, composable = { SongCard( it as Song) })
+    } else {
+        Text("Aucune musique trouvé")
+    }
+}
 
+@Composable
+fun ListAlbums(albums : List<Album>?){
+    if (albums == null) return
+    if (!albums.isEmpty()) {
+        CardsList(albums as List<Object>, composable = { AlbumCard( it as Album) })
+    } else {
+        Text("Aucun album trouvé")
+    }
+}
+
+@Composable
+fun CardsList(list: List<Object>, composable: @Composable (Object) -> Unit){
+    LazyColumn() {
+        items(list){
+            Row() {
+                composable(it)
+            }
+        }
+    }
+}
+
+@Composable
+fun SearchType(searchT: MutableState<String> = remember {  mutableStateOf("Chanson")}){
+    val typeList = listOf("Artiste", "Chanson", "Album")
+    Row() {
+        for (type in typeList) {
+            if (searchT.value != type) {
+                Button(onClick = { searchT.value = type }) {
+                    Text(type)
+                }
+            }else {
+                Button(onClick = { searchT.value = type },  enabled = false) {
+                    Text(type)
+                }
+
+            }
+        }
+    }
 }
 
 @Preview(showBackground = true)
@@ -147,11 +272,16 @@ fun GreetingPreview() {
                 Title()
             }
             Row {
-                SearchBar( search = remember { mutableStateOf("Rechercher") }, viewModel = MusicViewModel())
+                SearchBar(
+                    search = remember { mutableStateOf("Rechercher") },
+                    viewModel = MusicViewModel()
+                )
             }
+            SearchType()
             Row {
                 ArtistCard(artiste = Artist(1, "test", "https://api.deezer.com/artist/27/image"))
             }
         }
     }
 }
+
